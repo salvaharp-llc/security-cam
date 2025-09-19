@@ -1,0 +1,1 @@
+DELAY = 5 # Seconds between each reading
