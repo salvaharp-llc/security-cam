@@ -1,10 +1,17 @@
 import cv2
+import os
 from config import DELAY, TEST_VIDEO_PATH
 from catch_date_time import get_time, frame_to_time
 from detection import PeopleDetector
 
-def get_camera():
-    cap = cv2.VideoCapture(0)
+def get_camera(camera_port = 0):
+    try:
+        camera_port = int(camera_port)
+    except ValueError:
+        print(f"Invalid camera port: {camera_port}. Must be an integer.")
+        return
+    cap = cv2.VideoCapture(camera_port)
+
     while True:
         success, img = cap.read()
         if not success:
@@ -20,8 +27,11 @@ def get_camera():
 
     cap.release()
 
-def get_video():
-    cap = cv2.VideoCapture(TEST_VIDEO_PATH)
+def get_video(video_path = TEST_VIDEO_PATH):
+    if not os.path.isfile(video_path):
+        print(f"Video file not found: {video_path}")
+        return
+    cap = cv2.VideoCapture(video_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
     frame_step = DELAY * fps

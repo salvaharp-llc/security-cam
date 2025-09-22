@@ -6,20 +6,27 @@ def main():
     )
     parser.add_argument(
         'mode',
-        choices=['camera'],
-        help='Mode to run: camera'
+        choices=['camera', 'video'],
+        help='Use recorded video or live camera'
     )
     parser.add_argument(
-        '--test', '-t',
-        action='store_true',
-        help='Use recorded video instead of live camera'
+        'source',
+        nargs='?',
+        default=None,
+        help='Optional: path to video file or camera port (default: 0 for camera, config for video)'
     )
     args = parser.parse_args()
 
-    if args.test:
-        get_video()
+    if args.mode == 'video':
+        if args.source:
+            get_video(args.source)
+        else:
+            get_video()
     elif args.mode == 'camera':
-        get_camera()
+        if args.source:
+            get_camera(args.source)
+        else:
+            get_camera()
 
 if __name__ == "__main__":
     main()
