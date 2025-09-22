@@ -2,7 +2,7 @@ import cv2
 import os
 from config import DELAY, TEST_VIDEO_PATH
 from catch_date_time import get_time, frame_to_time
-from detection import PeopleDetector
+from detection import PeopleDetector, PoseDetector
 
 def get_camera(camera_port = 0):
     try:
@@ -38,6 +38,7 @@ def get_video(video_path = TEST_VIDEO_PATH):
     frame_number = 0
 
     people_detector = PeopleDetector()
+    pose_detector = PoseDetector()
 
     while frame_number <= total_frames:
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
@@ -47,10 +48,27 @@ def get_video(video_path = TEST_VIDEO_PATH):
             break
         
         time = frame_to_time(frame_number, fps)
-        people = people_detector.detect(img)
-        print(f'{len(people)} detected at {time}')
+        poses = process_frame(img, people_detector, pose_detector)
+        print(f'{len(poses)} detected at {time}')
 
         frame_number += frame_step
 
     cap.release()
     people_detector.close()
+    pose_detector.close()
+
+def process_frame(img, people_detector, pose_detector):
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    people_boxes = people_detector.detect(img_rgb)
+    poses = []
+    for bbox in people_boxes:
+        x_min = int(bbox.origin_x)
+        y_min = int(bbox.origin_y)
+        x_max = int(bbox.origin_x + bbox.width)
+        y_max = int(bbox.origin_y + bbox.height)
+
+        person_img = img_rgb[y_min:y_max, x_min:x_max].copy()
+
+        pose = pose_detector.detect(person_img)
+        poses.append(pose)
+    return poses
