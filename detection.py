@@ -1,5 +1,7 @@
 import mediapipe as mp
-import cv2
+from mediapipe import solutions
+from mediapipe.framework.formats import landmark_pb2
+import numpy as np
 from config import OBJECTS_MODEL_PATH, POSE_MODEL_PATH, SCORE_THRESHOLD
 
 class PeopleDetector:
@@ -45,11 +47,29 @@ class PoseDetector:
 
     def detect(self, image):
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
-        result = self.landmarker.detect(mp_image)
-        return result
-    
-    def landmark_to_pose(self, landmark):
-        pass
+        return self.landmarker.detect(mp_image)
 
     def close(self):
         self.landmarker.close()
+
+def draw_landmarks_on_image(image, landmark_results): 
+    pose_landmarks_list = landmark_results.pose_landmarks
+    annotated_image = np.copy(image)
+    # Loop through the detected poses to visualize.
+    for idx in range(len(pose_landmarks_list)):
+        pose_landmarks = pose_landmarks_list[idx]
+
+        # Draw the pose landmarks.
+        pose_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+        pose_landmarks_proto.landmark.extend([
+        landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark in pose_landmarks
+        ])
+        solutions.drawing_utils.draw_landmarks(
+        annotated_image,
+        pose_landmarks_proto,
+        solutions.pose.POSE_CONNECTIONS,
+        solutions.drawing_styles.get_default_pose_landmarks_style())
+    return annotated_image
+    
+def landmarks_to_pose(self, landmarks):
+    pass

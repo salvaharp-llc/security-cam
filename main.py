@@ -15,13 +15,18 @@ def main():
         default=None,
         help='Optional: path to video file or camera port (default: 0 for camera, config for video)'
     )
+    parser.add_argument(
+        '-d', '--debug',
+        action='store_true',
+        help='Enable debug mode'
+    )
     args = parser.parse_args()
 
     if args.mode == 'video':
         if args.source:
-            get_video(args.source)
+            get_video(args.debug, args.source)
         else:
-            get_video()
+            get_video(args.debug)
     elif args.mode == 'camera':
         if args.source:
             get_camera(args.source)

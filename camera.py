@@ -2,7 +2,7 @@ import cv2
 import os
 from config import DELAY, TEST_VIDEO_PATH
 from catch_date_time import get_time, frame_to_time
-from detection import PeopleDetector, PoseDetector
+from detection import PeopleDetector, PoseDetector, draw_landmarks_on_image
 
 def get_camera(camera_port = 0):
     try:
@@ -13,13 +13,13 @@ def get_camera(camera_port = 0):
     cap = cv2.VideoCapture(camera_port)
 
     while True:
-        success, img = cap.read()
+        success, image = cap.read()
         if not success:
             print('Error: unable to read frame')
             break
         
         time = get_time()
-        cv2.imshow(time, img)
+        cv2.imshow(time, image)
 
         if cv2.waitKey(int(DELAY * 1000)) != -1:
             print('Stoping the program')
@@ -27,7 +27,7 @@ def get_camera(camera_port = 0):
 
     cap.release()
 
-def get_video(video_path = TEST_VIDEO_PATH):
+def get_video(debug, video_path = TEST_VIDEO_PATH):
     if not os.path.isfile(video_path):
         print(f"Video file not found: {video_path}")
         return
@@ -42,14 +42,17 @@ def get_video(video_path = TEST_VIDEO_PATH):
 
     while frame_number <= total_frames:
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
-        success, img = cap.read()
+        success, image = cap.read()
         if not success:
             print('Error: unable to read frame')
             break
         
         time = frame_to_time(frame_number, fps)
-        poses = process_frame(img, people_detector, pose_detector)
-        print(f'{len(poses)} detected at {time}')
+        people_images, landmark_results = process_frame(image, people_detector, pose_detector)
+        print(f'{len(landmark_results)} detected at {time}')
+
+        if debug:
+            plot_people(time, people_images, landmark_results)
 
         frame_number += frame_step
 
@@ -57,10 +60,11 @@ def get_video(video_path = TEST_VIDEO_PATH):
     people_detector.close()
     pose_detector.close()
 
-def process_frame(img, people_detector, pose_detector):
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+def process_frame(image, people_detector, pose_detector):
+    img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     people_boxes = people_detector.detect(img_rgb)
-    poses = []
+    landmark_results = []
+    people_images = []
     for bbox in people_boxes:
         x_min = int(bbox.origin_x)
         y_min = int(bbox.origin_y)
@@ -68,7 +72,19 @@ def process_frame(img, people_detector, pose_detector):
         y_max = int(bbox.origin_y + bbox.height)
 
         person_img = img_rgb[y_min:y_max, x_min:x_max].copy()
+        people_images.append(person_img)
 
-        pose = pose_detector.detect(person_img)
-        poses.append(pose)
-    return poses
+        pose_result = pose_detector.detect(person_img)
+        landmark_results.append(pose_result)
+
+    return people_images, landmark_results
+
+def plot_people(time, people_images, landmark_results):
+    for idx in range(len(people_images)):
+        annotated_image = draw_landmarks_on_image(people_images[idx], landmark_results[idx])
+        cv2.imshow(f'Person {idx+1} detected at {time}', cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
+    
+    cv2.waitKey(DELAY * 1000)
+    
+    for idx in range(len(people_images)):
+        cv2.destroyWindow(f'Person {idx+1} detected at {time}')
