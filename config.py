@@ -5,3 +5,12 @@ OBJECTS_MODEL_PATH = 'models/efficientdet_lite0.tflite'
 POSE_MODEL_PATH = 'models/pose_landmarker_full.task'
 
 SCORE_THRESHOLD = 0.35
+POSE_THRESHOLDS = {
+    "leg_straight": 160,
+    "leg_bent_min": 70,
+    "leg_bent_max": 110,
+    "torso_vertical": 0.05,
+    "hip_knee_close": 0.05,
+    "hip_tilt": 0.02,
+    "conf_threshold": 0.6,
+}

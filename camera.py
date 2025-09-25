@@ -2,7 +2,7 @@ import cv2
 import os
 from config import DELAY, TEST_VIDEO_PATH
 from catch_date_time import get_time, frame_to_time
-from detection import PeopleDetector, PoseDetector, draw_landmarks_on_image
+from detection import PeopleDetector, PoseDetector, draw_landmarks_on_image, landmarks_to_poses
 
 def get_camera(camera_port = 0):
     try:
@@ -51,6 +51,10 @@ def get_video(debug, video_path = TEST_VIDEO_PATH):
         people_images, landmark_results = process_frame(image, people_detector, pose_detector)
         print(f'{len(landmark_results)} detected at {time}')
 
+        poses = landmarks_to_poses(landmark_results)
+        for pose in poses:
+            print(pose)
+
         if debug:
             plot_people(time, people_images, landmark_results)
 
@@ -84,7 +88,7 @@ def plot_people(time, people_images, landmark_results):
         annotated_image = draw_landmarks_on_image(people_images[idx], landmark_results[idx])
         cv2.imshow(f'Person {idx+1} detected at {time}', cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
     
-    cv2.waitKey(DELAY * 1000)
+    cv2.waitKey(0)
     
     for idx in range(len(people_images)):
         cv2.destroyWindow(f'Person {idx+1} detected at {time}')
