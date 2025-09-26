@@ -9,10 +9,11 @@ def is_standing(standing_landmarks):
         hip_mid = midpoint(left_hip, right_hip)
         
         legs_straight = leg_is_straight(left_hip, left_knee, left_ankle) and leg_is_straight(right_hip, right_knee, right_ankle)
-        torso_upright = vertical_distance(shoulder_mid, hip_mid) > POSE_THRESHOLDS["torso_vertical"]
+        torso_upright = vertical_distance(shoulder_mid, hip_mid) > POSE_THRESHOLDS["torso_vertical"] * distance(left_shoulder, right_shoulder)
         hips_above_knees = is_above(left_hip, left_knee) and is_above(right_hip, right_knee)
-        
-        if legs_straight and torso_upright and hips_above_knees:
+        open_legs = angle_between(left_knee, midpoint(left_hip, right_hip), right_knee) > POSE_THRESHOLDS["open_legs"]
+
+        if legs_straight and torso_upright and hips_above_knees and not open_legs:
             return True
     return False
 
@@ -25,23 +26,20 @@ def is_sitting(sitting_landmarks):
         
         legs_bent = leg_is_bent(left_hip, left_knee, left_ankle) and leg_is_bent(right_hip, right_knee, right_ankle)
         torso_upright = is_above(shoulder_mid, hip_mid)
-        hip_knee_close = vertical_distance(hip_mid, knee_mid) < POSE_THRESHOLDS["hip_knee_close"]
-        
+        hip_knee_close = vertical_distance(hip_mid, knee_mid) < POSE_THRESHOLDS["hip_knee_close"] * distance(left_shoulder, right_shoulder)
+
         if legs_bent and torso_upright and hip_knee_close:
             return True
     return False
 
 def is_walking(walk_landmarks):
     if are_confident(walk_landmarks):
-        left_hip, right_hip, left_knee, right_knee, left_ankle, right_ankle = walk_landmarks
-        one_leg_bent = (
-            leg_is_bent(left_hip, left_knee, left_ankle) ^ 
-            leg_is_bent(right_hip, right_knee, right_ankle)
-        )
-        hip_slope = slope(left_hip, right_hip)
-        hip_tilted = abs(hip_slope) > POSE_THRESHOLDS["hip_tilt"]
+        left_hip, right_hip, left_knee, right_knee, _, _, left_ankle, right_ankle = walk_landmarks
+        one_leg_bent = leg_is_bent(left_hip, left_knee, left_ankle) or leg_is_bent(right_hip, right_knee, right_ankle)
+        # hip_slope = slope(left_hip, right_hip)
+        # hip_tilted = abs(hip_slope) > POSE_THRESHOLDS["hip_tilt"]* distance(left_shoulder, right_shoulder)
         
-        if one_leg_bent and hip_tilted:
+        if one_leg_bent: # and hip_tilted
             return True
     return False
 
@@ -63,7 +61,7 @@ def angle_between(a, b, c):
     # Build vectors BA and BC
     ba = np.array([a.x - b.x, a.y - b.y, a.z - b.z])
     bc = np.array([c.x - b.x, c.y - b.y, c.z - b.z])
-
+    
     # Compute cosine using dot product formula
     cos_theta = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
 

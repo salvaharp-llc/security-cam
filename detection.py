@@ -115,7 +115,7 @@ def landmarks_to_poses(landmark_results):
     poses = []
     for landmark_result in landmark_results:
         pose = "unknown"
-        pose_landmarks_list = landmark_result.pose_landmarks
+        pose_landmarks_list = landmark_result.pose_world_landmarks
         if len(pose_landmarks_list) == 0:
             # No pose detected for this person
             poses.append(pose)
@@ -138,31 +138,26 @@ def landmarks_to_poses(landmark_results):
         right_elbow = pose_landmarks[Landmark.RIGHT_ELBOW]
         head = pose_landmarks[Landmark.NOSE]  # approximate head
 
-        # --- Standing ---
-        standing_landmarks = [
+        action_landmarks = [
             left_hip, right_hip, 
             left_knee, right_knee, 
             left_shoulder, right_shoulder, 
             left_ankle, right_ankle
             ]
-        if is_standing(standing_landmarks):
+        
+        # --- Standing ---
+        if is_standing(action_landmarks):
             pose = "standing"
 
         # --- Sitting ---
         if pose == "unknown":
-            sitting_landmarks = standing_landmarks
-            if is_sitting(sitting_landmarks):
+            if is_sitting(action_landmarks):
                 pose = "sitting"
             
 
         # --- Walking/Stepping ---
         if pose == "unknown":
-            walk_landmarks = [
-                left_hip, right_hip, 
-                left_knee, right_knee, 
-                left_ankle, right_ankle
-                ]
-            if is_walking(walk_landmarks):
+            if is_walking(action_landmarks):
                 pose = "walking/stepping"
 
         # --- Arms up (can overlay)
