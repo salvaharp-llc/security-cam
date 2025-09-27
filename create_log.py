@@ -39,7 +39,7 @@ class EventLogger:
             self.current_event = None
 
 
-def summarize_event(event): # calculate average number of people, most common pose, etc
+def summarize_event(event):
     summarized = copy.deepcopy(event)
     for idx, frame in enumerate(event["frames"]):
         summarized_poses = {}
