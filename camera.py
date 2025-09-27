@@ -3,6 +3,7 @@ import os
 from config import DELAY, TEST_VIDEO_PATH
 from catch_date_time import get_time, frame_to_time
 from detection import PeopleDetector, PoseDetector, draw_landmarks_on_image, landmarks_to_poses
+from create_log import EventLogger
 
 def get_camera(camera_port = 0):
     try:
@@ -27,20 +28,22 @@ def get_camera(camera_port = 0):
 
     cap.release()
 
-def get_video(debug, video_path = TEST_VIDEO_PATH):
+def get_video(debug, verbose, video_path = TEST_VIDEO_PATH):
     if not os.path.isfile(video_path):
         print(f"Video file not found: {video_path}")
         return
     cap = cv2.VideoCapture(video_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    frame_step = DELAY * fps
+    frame_step = int(DELAY * fps)
     frame_number = 0
 
     people_detector = PeopleDetector()
     pose_detector = PoseDetector()
 
-    while frame_number <= total_frames:
+    log = EventLogger(os.path.basename(video_path))
+
+    while frame_number < total_frames:
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
         success, image = cap.read()
         if not success:
@@ -48,17 +51,28 @@ def get_video(debug, video_path = TEST_VIDEO_PATH):
             break
         
         time = frame_to_time(frame_number, fps)
-        people_images, landmark_results = process_frame(image, people_detector, pose_detector)
-        print(f'{len(landmark_results)} detected at {time}')
-
+        people, landmark_results = process_frame(image, people_detector, pose_detector)
         poses = landmarks_to_poses(landmark_results)
-        for pose in poses:
-            print(pose)
+        if people:
+            if not log.current_event:
+                log.start_event(time)
+            log.add_frame(time, len(people), poses)
+            end_time = time
+        elif log.current_event:
+            log.end_event(end_time)
+
+        if verbose:   
+            print(f'{len(people)} detected at {time}')
+            for pose in poses:
+                print(pose)
 
         if debug:
-            plot_people(time, people_images, landmark_results)
+            plot_people(time, people, landmark_results)
 
         frame_number += frame_step
+
+    if log.current_event:
+        log.end_event(end_time)
 
     cap.release()
     people_detector.close()

@@ -11,9 +11,8 @@ def is_standing(standing_landmarks):
         legs_straight = leg_is_straight(left_hip, left_knee, left_ankle) and leg_is_straight(right_hip, right_knee, right_ankle)
         torso_upright = vertical_distance(shoulder_mid, hip_mid) > POSE_THRESHOLDS["torso_vertical"] * distance(left_shoulder, right_shoulder)
         hips_above_knees = is_above(left_hip, left_knee) and is_above(right_hip, right_knee)
-        open_legs = angle_between(left_knee, midpoint(left_hip, right_hip), right_knee) > POSE_THRESHOLDS["open_legs"]
 
-        if legs_straight and torso_upright and hips_above_knees and not open_legs:
+        if legs_straight and torso_upright and hips_above_knees:
             return True
     return False
 

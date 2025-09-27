@@ -20,13 +20,18 @@ def main():
         action='store_true',
         help='Enable debug mode'
     )
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='Print detections and poses in terminal'
+    )
     args = parser.parse_args()
 
     if args.mode == 'video':
         if args.source:
-            get_video(args.debug, args.source)
+            get_video(args.debug, args.verbose, args.source)
         else:
-            get_video(args.debug)
+            get_video(args.debug, args.verbose)
     elif args.mode == 'camera':
         if args.source:
             get_camera(args.source)
