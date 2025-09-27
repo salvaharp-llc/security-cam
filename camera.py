@@ -1,17 +1,22 @@
 import cv2
 import os
 from config import DELAY, TEST_VIDEO_PATH
-from catch_date_time import get_time, frame_to_time
+from catch_date_time import get_time, get_date, frame_to_time
 from detection import PeopleDetector, PoseDetector, draw_landmarks_on_image, landmarks_to_poses
 from create_log import EventLogger
 
-def get_camera(camera_port = 0):
+def get_camera(debug, verbose, camera_port = 0):
     try:
         camera_port = int(camera_port)
     except ValueError:
         print(f"Invalid camera port: {camera_port}. Must be an integer.")
         return
     cap = cv2.VideoCapture(camera_port)
+
+    people_detector = PeopleDetector()
+    pose_detector = PoseDetector()
+
+    log = EventLogger(get_date())
 
     while True:
         success, image = cap.read()
@@ -20,13 +25,30 @@ def get_camera(camera_port = 0):
             break
         
         time = get_time()
-        cv2.imshow(time, image)
+        people, landmark_results = process_frame(image, people_detector, pose_detector)
+        poses = landmarks_to_poses(landmark_results)
+        if people:
+            if not log.current_event:
+                log.start_event(time)
+            log.add_frame(time, len(people), poses)
+            end_time = time
+        elif log.current_event:
+            log.end_event(end_time)
 
-        if cv2.waitKey(int(DELAY * 1000)) != -1:
-            print('Stoping the program')
-            break
+        if verbose:   
+            print(f'{len(people)} detected at {time}')
+            for pose in poses:
+                print(pose)
+
+        if debug:
+            plot_people(time, people, landmark_results)
+
+    if log.current_event:
+        log.end_event(end_time)
 
     cap.release()
+    people_detector.close()
+    pose_detector.close()
 
 def get_video(debug, verbose, video_path = TEST_VIDEO_PATH):
     if not os.path.isfile(video_path):

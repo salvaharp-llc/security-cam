@@ -1,6 +1,7 @@
 import os
 import json
 import copy
+from datetime import timedelta
 from config import LOGS_PATH
 
 class EventLogger:
@@ -31,12 +32,14 @@ class EventLogger:
             self.current_event["duration"] = (
                 end_time - self.current_event["start"]
             )
+            if self.current_event["duration"].total_seconds() < 0:
+                self.current_event["duration"] += timedelta(days=1)
             summarized = summarize_event(self.current_event)
             save_log(self.file_path, summarized)
             self.current_event = None
 
 
-def summarize_event(event):
+def summarize_event(event): # calculate average number of people, most common pose, etc
     summarized = copy.deepcopy(event)
     for idx, frame in enumerate(event["frames"]):
         summarized_poses = {}

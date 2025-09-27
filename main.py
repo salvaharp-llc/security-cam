@@ -34,9 +34,9 @@ def main():
             get_video(args.debug, args.verbose)
     elif args.mode == 'camera':
         if args.source:
-            get_camera(args.source)
+            get_camera(args.debug, args.verbose, args.source)
         else:
-            get_camera()
+            get_camera(args.debug, args.verbose)
 
 if __name__ == "__main__":
     main()
